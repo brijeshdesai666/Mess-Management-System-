@@ -1,0 +1,31 @@
+{
+    "students": [
+      {
+        "username": "student1",
+        "password": "password123",
+        "canceled_meals": {
+          "breakfast": false,
+          "lunch": false,
+          "dinner": false
+        }
+      },
+      {
+        "username": "student2",
+        "password": "password123",
+        "canceled_meals": {
+          "breakfast": true,
+          "lunch": false,
+          "dinner": false
+        }
+      }
+    ],
+    "admin": {
+      "username": "admin",
+      "password": "adminpass",
+      "meal_counts": {
+        "breakfast": 100,
+        "lunch": 120,
+        "dinner": 80
+      }
+    }
+  }

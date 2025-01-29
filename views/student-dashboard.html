@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - Mess Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+  <!-- <link rel="stylesheet" href="N:\Internal Hackathon\mess-management-system\public\css\styles.css"> -->
+
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-header text-center">
+      <h1>Student Dashboard</h1>
+      <p>Manage your meals with ease!</p>
+    </div>
+
+    <div class="row meal-cards">
+      <!-- Breakfast -->
+      <div class="col-md-4">
+        <div class="meal-card">
+          <div class="meal-header">
+            <h3>Breakfast</h3>
+          </div>
+          <div class="meal-body">
+            <button id="cancelBreakfast" class="btn btn-danger">Cancel Breakfast</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lunch -->
+      <div class="col-md-4">
+        <div class="meal-card">
+          <div class="meal-header">
+            <h3>Lunch</h3>
+          </div>
+          <div class="meal-body">
+            <button id="cancelLunch" class="btn btn-danger">Cancel Lunch</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dinner -->
+      <div class="col-md-4">
+        <div class="meal-card">
+          <div class="meal-header">
+            <h3>Dinner</h3>
+          </div>
+          <div class="meal-body">
+            <button id="cancelDinner" class="btn btn-danger">Cancel Dinner</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/student-dashboard.js"></script>
+</body>
+</html>
