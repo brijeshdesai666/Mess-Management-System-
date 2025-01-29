@@ -5,6 +5,8 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
+const bcrypt = require("bcrypt");
+const cron = require("node-cron");
 
 const app = express();
 const PORT = 3000;
@@ -16,6 +18,50 @@ app.use(express.json());
 // Load student and admin data from JSON file
 const dataPath = path.join(__dirname, "data", "students.json");
 let data = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
+
+// Commented out the password hashing code
+// const saltRounds = 10;
+// data.students.forEach((student) => {
+//   if (!student.password.startsWith("$2b$")) {
+//     student.password = bcrypt.hashSync(student.password, saltRounds);
+//   }
+// });
+// if (!data.admin.password.startsWith("$2b$")) {
+//   data.admin.password = bcrypt.hashSync(data.admin.password, saltRounds);
+// }
+// fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+
+// Define meal times
+const mealTimes = {
+  breakfast: { start: "07:00", end: "09:00" },
+  lunch: { start: "12:00", end: "14:00" },
+  dinner: { start: "19:00", end: "21:00" },
+};
+
+// Define meal cancellation end times for testing
+const mealEndTimes = {
+  breakfast: "23:59",
+  lunch: "23:59",
+  dinner: "23:59",
+};
+
+// Helper function to check if current time is within the allowed cancellation time
+function isWithinTimeRange(meal) {
+  const now = new Date();
+  const [startHour, startMinute] = mealTimes[meal].start.split(":").map(Number);
+  const [endHour, endMinute] = mealTimes[meal].end.split(":").map(Number);
+  const startTime = new Date(now.setHours(startHour, startMinute, 0, 0));
+  const endTime = new Date(now.setHours(endHour, endMinute, 0, 0));
+  return now >= startTime && now <= endTime;
+}
+
+// Helper function to check if current time is before the allowed cancellation end time
+function isBeforeEndTime(meal) {
+  const now = new Date();
+  const [endHour, endMinute] = mealEndTimes[meal].split(":").map(Number);
+  const endTime = new Date(now.setHours(endHour, endMinute, 0, 0));
+  return now <= endTime;
+}
 
 // Serve login page
 app.get("/", (req, res) => {
@@ -35,11 +81,9 @@ app.get("/admin-dashboard.html", (req, res) => {
 // Login route for students
 app.post("/login/student", (req, res) => {
   const { username, password } = req.body;
-  const student = data.students.find(
-    (s) => s.username === username && s.password === password
-  );
+  const student = data.students.find((s) => s.username === username);
 
-  if (student) {
+  if (student && password === student.password) {
     res.json({ success: true, redirect: "/student-dashboard.html" });
   } else {
     res.status(401).json({ success: false, message: "Invalid credentials" });
@@ -60,41 +104,33 @@ app.post("/login/admin", (req, res) => {
 app.post("/cancel-meal", (req, res) => {
   const { meal, username } = req.body;
 
+  // Check if the current time is before the allowed cancellation end time
+  if (!isBeforeEndTime(meal)) {
+    return res.status(400).json({ success: false, message: "Cancellation not allowed at this time" });
+  }
+
+  // Check if the current time is within the allowed cancellation time
+  if (!isWithinTimeRange(meal)) {
+    return res.status(400).json({ success: false, message: "Cancellation not allowed at this time" });
+  }
+
   // Find the student in the JSON data
   const student = data.students.find((s) => s.username === username);
   if (student) {
-    student.canceled_meals[meal] = true; // Mark the meal as canceled
-    data.admin.meal_counts[meal] -= 1;   // Update the meal count
+    if (!student.canceled_meals[meal]) {
+      student.canceled_meals[meal] = true; // Mark the meal as canceled
+      data.admin.meal_counts[meal] -= 1;   // Update the meal count
+      data.admin.cancellations[meal] += 1; // Update the cancellation count
 
-    // Save the updated data back to the JSON file
-    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+      // Save the updated data back to the JSON file
+      fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
 
-    res.json({ success: true });
+      res.json({ success: true });
+    } else {
+      res.status(400).json({ success: false, message: "Meal already canceled" });
+    }
   } else {
     res.status(404).json({ success: false, message: "Student not found" });
-  }
-});
-
-// bcrypt is a library that helps you hash passwords securely
-const bcrypt = require("bcrypt");
-
-// Hash passwords (run this once to update the JSON file)
-const saltRounds = 10;
-data.students.forEach((student) => {
-  student.password = bcrypt.hashSync(student.password, saltRounds);
-});
-data.admin.password = bcrypt.hashSync(data.admin.password, saltRounds);
-fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-
-// Update the login route to compare hashed passwords
-app.post("/login/student", (req, res) => {
-  const { username, password } = req.body;
-  const student = data.students.find((s) => s.username === username);
-
-  if (student && bcrypt.compareSync(password, student.password)) {
-    res.json({ success: true, redirect: "/student-dashboard.html" });
-  } else {
-    res.status(401).json({ success: false, message: "Invalid credentials" });
   }
 });
 
@@ -104,8 +140,25 @@ app.get("/meal-counts", (req, res) => {
     breakfast: data.admin.meal_counts.breakfast,
     lunch: data.admin.meal_counts.lunch,
     dinner: data.admin.meal_counts.dinner,
+    breakfastCancellations: data.admin.cancellations.breakfast,
+    lunchCancellations: data.admin.cancellations.lunch,
+    dinnerCancellations: data.admin.cancellations.dinner,
   };
   res.json(counts);
+});
+
+// Schedule a task to reset cancellations at midnight
+cron.schedule("0 0 * * *", () => {
+  data.students.forEach((student) => {
+    student.canceled_meals.breakfast = false;
+    student.canceled_meals.lunch = false;
+    student.canceled_meals.dinner = false;
+  });
+  data.admin.cancellations.breakfast = 0;
+  data.admin.cancellations.lunch = 0;
+  data.admin.cancellations.dinner = 0;
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+  console.log("Cancellations reset at midnight");
 });
 
 // Error-handling middleware
@@ -118,16 +171,6 @@ app.use((err, req, res, next) => {
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
-==================== package.json ====================
-{
-  "name": "mess-management-system",
-  "version": "1.0.0",
-  "dependencies": {
-    "bcrypt": "^5.1.1",
-    "express": "^4.21.2"
-  }
-}
-
 ==================== admin.json ====================
 {}
 ==================== students.json ====================
@@ -135,18 +178,18 @@ app.listen(PORT, () => {
   "students": [
     {
       "username": "student1",
-      "password": "$2b$10$6jX5YTkagRI9RFUvTs/T3.QCSvgaFKZ.Pjdbo.6Q3vTr2ZJYbVEpS",
+      "password": "student1password",
       "canceled_meals": {
         "breakfast": true,
-        "lunch": false,
-        "dinner": false
+        "lunch": true,
+        "dinner": true
       }
     },
     {
       "username": "student2",
-      "password": "$2b$10$ADNGTSbosBCT5i9iEyFiEO5TazvgO1I9aa0VR.f4dbEYjGNsQ1QGC",
+      "password": "student2password",
       "canceled_meals": {
-        "breakfast": true,
+        "breakfast": false,
         "lunch": false,
         "dinner": false
       }
@@ -154,11 +197,16 @@ app.listen(PORT, () => {
   ],
   "admin": {
     "username": "admin",
-    "password": "$2b$10$LAinHkjzAbba8ymyzJUvs.hGctjsfOlOZpV/Phi0QCU4e.9XVigH6",
+    "password": "adminpassword",
     "meal_counts": {
-      "breakfast": 99,
-      "lunch": 120,
-      "dinner": 80
+      "breakfast": 98,
+      "lunch": 118,
+      "dinner": 79
+    },
+    "cancellations": {
+      "breakfast": 2,
+      "lunch": 2,
+      "dinner": 1
     }
   }
 }
@@ -415,94 +463,101 @@ document.getElementById("studentLoginForm").addEventListener("submit", async (e)
   });
 ==================== student-dashboard.js ====================
 document.getElementById("cancelBreakfast").addEventListener("click", async () => {
-    const response = await fetch("/cancel-meal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meal: "breakfast" }),
-    });
-    const result = await response.json();
-    if (result.success) {
-      alert("Breakfast canceled successfully!");
-    } else {
-      alert("Failed to cancel breakfast.");
-    }
-  });
+  await cancelMeal("breakfast", "cancelBreakfast");
+});
 
-// Add cutoff times for each meal
+document.getElementById("cancelLunch").addEventListener("click", async () => {
+  await cancelMeal("lunch", "cancelLunch");
+});
+
+document.getElementById("cancelDinner").addEventListener("click", async () => {
+  await cancelMeal("dinner", "cancelDinner");
+});
+
+async function cancelMeal(meal, buttonId) {
+  const response = await fetch("/cancel-meal", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ meal, username: "student1" }), // Replace with the logged-in student's username
+  });
+  const result = await response.json();
+  if (result.success) {
+    alert(`${meal.charAt(0).toUpperCase() + meal.slice(1)} canceled successfully!`);
+    const button = document.getElementById(buttonId);
+    button.disabled = true;
+    button.textContent = "Meal Canceled";
+  } else {
+    alert(`Failed to cancel ${meal}: ${result.message}`);
+  }
+}
+
+// Add cutoff times for each meal for testing
 const cutoffTimes = {
-    breakfast: "23:00", // 9 AM
-    lunch: "23:00",     // 12 PM
-    dinner: "23:00",    // 4 PM
-  };
-  
-  // Function to disable buttons after cutoff time
-  function disableButtonsAfterCutoff() {
-    const now = new Date();
-    const currentTime = now.toTimeString().slice(0, 5); // Get current time in HH:MM format
-  
-    // Disable breakfast button if current time is after cutoff
-    if (currentTime > cutoffTimes.breakfast) {
-      document.getElementById("cancelBreakfast").disabled = true;
-      document.getElementById("cancelBreakfast").textContent = "Timeout";
-    }
-  
-    // Disable lunch button if current time is after cutoff
-    if (currentTime > cutoffTimes.lunch) {
-      document.getElementById("cancelLunch").disabled = true;
-      document.getElementById("cancelLunch").textContent = "Timeout";
-    }
-  
-    // Disable dinner button if current time is after cutoff
-    if (currentTime > cutoffTimes.dinner) {
-      document.getElementById("cancelDinner").disabled = true;
-      document.getElementById("cancelDinner").textContent = "Timeout";
-    }
-  }
-  
-  // Call the function when the page loads
-  disableButtonsAfterCutoff();
+  breakfast: "23:59", // 11:59 PM
+  lunch: "23:59",     // 11:59 PM
+  dinner: "23:59",    // 11:59 PM
+};
 
-  function sendReminderEmail(email) {
-    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
-      to_email: email,
-      message: "Don’t forget to cancel your meal before the cutoff time!",
-    })
-    .then(
-      (response) => {
-        console.log("Email sent successfully!", response);
-      },
-      (error) => {
-        console.error("Failed to send email:", error);
-      }
-    );
-  }
-  
-  // Example: Send a reminder email when the page loads
-  const studentEmail = "student@example.com"; // Replace with the student's email
-  sendReminderEmail(studentEmail);
+// Function to disable buttons after cutoff time
+function disableButtonsAfterCutoff() {
+  const now = new Date();
+  const currentTime = now.toTimeString().slice(0, 5); // Get current time in HH:MM format
 
-  document.getElementById("cancelBreakfast").addEventListener("click", async () => {
-    const response = await fetch("/cancel-meal", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ meal: "breakfast", username: "student1" }), // Replace with the logged-in student's username
-    });
-    const result = await response.json();
-    if (result.success) {
-      alert("Breakfast canceled successfully!");
-    } else {
-      alert("Failed to cancel breakfast.");
+  // Disable breakfast button if current time is after cutoff
+  if (currentTime > cutoffTimes.breakfast) {
+    document.getElementById("cancelBreakfast").disabled = true;
+    document.getElementById("cancelBreakfast").textContent = "Timeout";
+  }
+
+  // Disable lunch button if current time is after cutoff
+  if (currentTime > cutoffTimes.lunch) {
+    document.getElementById("cancelLunch").disabled = true;
+    document.getElementById("cancelLunch").textContent = "Timeout";
+  }
+
+  // Disable dinner button if current time is after cutoff
+  if (currentTime > cutoffTimes.dinner) {
+    document.getElementById("cancelDinner").disabled = true;
+    document.getElementById("cancelDinner").textContent = "Timeout";
+  }
+}
+
+// Call the function when the page loads
+disableButtonsAfterCutoff();
+
+function sendReminderEmail(email) {
+  emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+    to_email: email,
+    message: "Don’t forget to cancel your meal before the cutoff time!",
+  })
+  .then(
+    (response) => {
+      console.log("Email sent successfully!", response);
+    },
+    (error) => {
+      console.error("Failed to send email:", error);
     }
-  });
+  );
+}
+
+// Example: Send a reminder email when the page loads
+const studentEmail = "student@example.com"; // Replace with the student's email
+sendReminderEmail(studentEmail);
 ==================== admin-dashboard.js ====================
 async function fetchMealCounts() {
-    const response = await fetch("/meal-counts");
-    const data = await response.json();
-    document.getElementById("breakfastCount").textContent = data.breakfast;
-    document.getElementById("lunchCount").textContent = data.lunch;
-    document.getElementById("dinnerCount").textContent = data.dinner;
-  }
-  fetchMealCounts();
+  const response = await fetch("/meal-counts");
+  const data = await response.json();
+  document.getElementById("breakfastTotal").textContent = data.breakfast + data.breakfastCancellations;
+  document.getElementById("lunchTotal").textContent = data.lunch + data.lunchCancellations;
+  document.getElementById("dinnerTotal").textContent = data.dinner + data.dinnerCancellations;
+  document.getElementById("breakfastCancellations").textContent = data.breakfastCancellations;
+  document.getElementById("lunchCancellations").textContent = data.lunchCancellations;
+  document.getElementById("dinnerCancellations").textContent = data.dinnerCancellations;
+  document.getElementById("breakfastComing").textContent = data.breakfast;
+  document.getElementById("lunchComing").textContent = data.lunch;
+  document.getElementById("dinnerComing").textContent = data.dinner;
+}
+fetchMealCounts();
 ==================== admin-dashboard.html ====================
 <!DOCTYPE html>
 <html lang="en">
@@ -511,7 +566,7 @@ async function fetchMealCounts() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Admin Dashboard - Mess Management System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link href="css\styles.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
 </head>
 <body>
   <div class="admin-dashboard">
@@ -522,8 +577,9 @@ async function fetchMealCounts() {
         <div class="meal-count card shadow-sm">
           <div class="card-body">
             <h3>Breakfast</h3>
-            <p>Total Students: <span id="breakfastCount">100</span></p>
+            <p>Total Students: <span id="breakfastTotal">100</span></p>
             <p>Cancellations: <span id="breakfastCancellations">0</span></p>
+            <p>Students Coming: <span id="breakfastComing">100</span></p>
             <button class="btn btn-success btn-block">View Details</button>
           </div>
         </div>
@@ -534,8 +590,9 @@ async function fetchMealCounts() {
         <div class="meal-count card shadow-sm">
           <div class="card-body">
             <h3>Lunch</h3>
-            <p>Total Students: <span id="lunchCount">120</span></p>
+            <p>Total Students: <span id="lunchTotal">120</span></p>
             <p>Cancellations: <span id="lunchCancellations">0</span></p>
+            <p>Students Coming: <span id="lunchComing">120</span></p>
             <button class="btn btn-success btn-block">View Details</button>
           </div>
         </div>
@@ -546,8 +603,9 @@ async function fetchMealCounts() {
         <div class="meal-count card shadow-sm">
           <div class="card-body">
             <h3>Dinner</h3>
-            <p>Total Students: <span id="dinnerCount">80</span></p>
+            <p>Total Students: <span id="dinnerTotal">80</span></p>
             <p>Cancellations: <span id="dinnerCancellations">0</span></p>
+            <p>Students Coming: <span id="dinnerComing">80</span></p>
             <button class="btn btn-success btn-block">View Details</button>
           </div>
         </div>
@@ -713,8 +771,6 @@ async function fetchMealCounts() {
   <title>Student Dashboard - Mess Management System</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
   <link href="css/styles.css" rel="stylesheet">
-  <!-- <link rel="stylesheet" href="N:\Internal Hackathon\mess-management-system\public\css\styles.css"> -->
-
 </head>
 <body>
   <div class="dashboard-container">
@@ -763,11 +819,11 @@ async function fetchMealCounts() {
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3.2.0/dist/email.min.js"></script>
-<script>
-  (function () {
-    emailjs.init("YOUR_USER_ID"); // Replace with your EmailJS user ID
-  })();
-</script>
+  <script>
+    (function () {
+      emailjs.init("YOUR_USER_ID"); // Replace with your EmailJS user ID
+    })();
+  </script>
 
   <script src="/js/student-dashboard.js"></script>
 </body>

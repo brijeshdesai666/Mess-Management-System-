@@ -80,7 +80,11 @@ app.post("/login/student", (req, res) => {
   const student = data.students.find((s) => s.username === username);
 
   if (student && password === student.password) {
-    res.json({ success: true, redirect: "/student-dashboard.html" });
+    res.json({ 
+      success: true, 
+      redirect: "/student-dashboard.html", 
+      username: username // Return the username
+    });
   } else {
     res.status(401).json({ success: false, message: "Invalid credentials" });
   }
@@ -90,7 +94,11 @@ app.post("/login/student", (req, res) => {
 app.post("/login/admin", (req, res) => {
   const { username, password } = req.body;
   if (username === data.admin.username && password === data.admin.password) {
-    res.json({ success: true, redirect: "/admin-dashboard.html" });
+    res.json({ 
+      success: true, 
+      redirect: "/admin-dashboard.html", 
+      username: username // Return the username
+    });
   } else {
     res.status(401).json({ success: false, message: "Invalid credentials" });
   }
@@ -161,6 +169,17 @@ cron.schedule("0 0 * * *", () => {
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ success: false, message: "Something went wrong!" });
+});
+
+// Get student's canceled meals
+app.get("/student-canceled-meals", (req, res) => {
+  const username = req.query.username;
+  const student = data.students.find(s => s.username === username);
+  if (student) {
+    res.json(student.canceled_meals);
+  } else {
+    res.status(404).json({ success: false, message: "Student not found" });
+  }
 });
 
 // Start the server

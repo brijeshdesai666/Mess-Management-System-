@@ -11,10 +11,16 @@ document.getElementById("cancelDinner").addEventListener("click", async () => {
 });
 
 async function cancelMeal(meal, buttonId) {
+  const username = localStorage.getItem('currentUsername'); // Retrieve username
+  if (!username) {
+    alert("Please log in to cancel meals.");
+    return;
+  }
+
   const response = await fetch("/cancel-meal", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ meal, username: "student1" }), // Replace with the logged-in student's username
+    body: JSON.stringify({ meal, username }), // Use dynamic username
   });
   const result = await response.json();
   if (result.success) {
@@ -58,8 +64,35 @@ function disableButtonsAfterCutoff() {
   }
 }
 
-// Call the function when the page loads
+// Load canceled meals on page initialization
+async function loadCanceledMeals() {
+  const username = localStorage.getItem('currentUsername');
+  if (!username) {
+    alert("Not logged in");
+    window.location.href = "/"; // Redirect to login
+    return;
+  }
+
+  const response = await fetch(`/student-canceled-meals?username=${username}`);
+  const canceledMeals = await response.json();
+
+  if (canceledMeals.breakfast) disableButton("breakfast");
+  if (canceledMeals.lunch) disableButton("lunch");
+  if (canceledMeals.dinner) disableButton("dinner");
+}
+
+function disableButton(meal) {
+  const buttonId = `cancel${meal.charAt(0).toUpperCase() + meal.slice(1)}`;
+  const button = document.getElementById(buttonId);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Meal Canceled";
+  }
+}
+
+// Call the functions when the page loads
 disableButtonsAfterCutoff();
+loadCanceledMeals();
 
 function sendReminderEmail(email) {
   emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
