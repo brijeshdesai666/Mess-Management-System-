@@ -1,0 +1,774 @@
+
+==================== README.md ====================
+# Local setup instructions
+==================== app.js ====================
+const express = require("express");
+const fs = require("fs");
+const path = require("path");
+
+const app = express();
+const PORT = 3000;
+
+// Middleware to serve static files
+app.use(express.static('public'));
+app.use(express.json());
+
+// Load student and admin data from JSON file
+const dataPath = path.join(__dirname, "data", "students.json");
+let data = JSON.parse(fs.readFileSync(dataPath, "utf-8"));
+
+// Serve login page
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "login.html"));
+});
+
+// Serve student dashboard
+app.get("/student-dashboard.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "student-dashboard.html"));
+});
+
+// Serve admin dashboard
+app.get("/admin-dashboard.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "admin-dashboard.html"));
+});
+
+// Login route for students
+app.post("/login/student", (req, res) => {
+  const { username, password } = req.body;
+  const student = data.students.find(
+    (s) => s.username === username && s.password === password
+  );
+
+  if (student) {
+    res.json({ success: true, redirect: "/student-dashboard.html" });
+  } else {
+    res.status(401).json({ success: false, message: "Invalid credentials" });
+  }
+});
+
+// Login route for admin
+app.post("/login/admin", (req, res) => {
+  const { username, password } = req.body;
+  if (username === data.admin.username && password === data.admin.password) {
+    res.json({ success: true, redirect: "/admin-dashboard.html" });
+  } else {
+    res.status(401).json({ success: false, message: "Invalid credentials" });
+  }
+});
+
+// Cancel meal route
+app.post("/cancel-meal", (req, res) => {
+  const { meal, username } = req.body;
+
+  // Find the student in the JSON data
+  const student = data.students.find((s) => s.username === username);
+  if (student) {
+    student.canceled_meals[meal] = true; // Mark the meal as canceled
+    data.admin.meal_counts[meal] -= 1;   // Update the meal count
+
+    // Save the updated data back to the JSON file
+    fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+
+    res.json({ success: true });
+  } else {
+    res.status(404).json({ success: false, message: "Student not found" });
+  }
+});
+
+// bcrypt is a library that helps you hash passwords securely
+const bcrypt = require("bcrypt");
+
+// Hash passwords (run this once to update the JSON file)
+const saltRounds = 10;
+data.students.forEach((student) => {
+  student.password = bcrypt.hashSync(student.password, saltRounds);
+});
+data.admin.password = bcrypt.hashSync(data.admin.password, saltRounds);
+fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+
+// Update the login route to compare hashed passwords
+app.post("/login/student", (req, res) => {
+  const { username, password } = req.body;
+  const student = data.students.find((s) => s.username === username);
+
+  if (student && bcrypt.compareSync(password, student.password)) {
+    res.json({ success: true, redirect: "/student-dashboard.html" });
+  } else {
+    res.status(401).json({ success: false, message: "Invalid credentials" });
+  }
+});
+
+// Get meal counts route
+app.get("/meal-counts", (req, res) => {
+  const counts = {
+    breakfast: data.admin.meal_counts.breakfast,
+    lunch: data.admin.meal_counts.lunch,
+    dinner: data.admin.meal_counts.dinner,
+  };
+  res.json(counts);
+});
+
+// Error-handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ success: false, message: "Something went wrong!" });
+});
+
+// Start the server
+app.listen(PORT, () => {
+  console.log(`Server is running on http://localhost:${PORT}`);
+});
+==================== package.json ====================
+{
+  "name": "mess-management-system",
+  "version": "1.0.0",
+  "dependencies": {
+    "bcrypt": "^5.1.1",
+    "express": "^4.21.2"
+  }
+}
+
+==================== admin.json ====================
+{}
+==================== students.json ====================
+{
+  "students": [
+    {
+      "username": "student1",
+      "password": "$2b$10$6jX5YTkagRI9RFUvTs/T3.QCSvgaFKZ.Pjdbo.6Q3vTr2ZJYbVEpS",
+      "canceled_meals": {
+        "breakfast": true,
+        "lunch": false,
+        "dinner": false
+      }
+    },
+    {
+      "username": "student2",
+      "password": "$2b$10$ADNGTSbosBCT5i9iEyFiEO5TazvgO1I9aa0VR.f4dbEYjGNsQ1QGC",
+      "canceled_meals": {
+        "breakfast": true,
+        "lunch": false,
+        "dinner": false
+      }
+    }
+  ],
+  "admin": {
+    "username": "admin",
+    "password": "$2b$10$LAinHkjzAbba8ymyzJUvs.hGctjsfOlOZpV/Phi0QCU4e.9XVigH6",
+    "meal_counts": {
+      "breakfast": 99,
+      "lunch": 120,
+      "dinner": 80
+    }
+  }
+}
+==================== styles.css ====================
+/* General Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #f8f9fa;
+    color: #333;
+  }
+  
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  h1, h2 {
+    color: #2c3e50;
+    font-weight: bold;
+  }
+  
+  /* Login Page Styles */
+  .login-page {
+    background: linear-gradient(135deg, #6a11cb, #2575fc);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .login-box {
+    background: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  }
+  
+  .login-box h2 {
+    margin-bottom: 20px;
+    font-size: 24px;
+    text-align: center;
+  }
+  
+  .form-control {
+    border-radius: 5px;
+    border: 1px solid #ddd;
+    padding: 10px;
+  }
+  
+  .btn-primary {
+    background-color: #2575fc;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    transition: background-color 0.3s ease;
+  }
+  
+  .btn-primary:hover {
+    background-color: #1a5bbf;
+  }
+  
+  /* Dashboard Styles */
+  .dashboard-container {
+    padding: 40px;
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.dashboard-header {
+    margin-bottom: 40px;
+}
+
+.dashboard-header h1 {
+    font-size: 36px;
+    font-weight: bold;
+    color: #2c3e50;
+}
+
+.dashboard-header p {
+    font-size: 20px;
+    color: #7f8c8d;
+}
+
+.meal-cards {
+    display: flex;
+    justify-content: space-between;
+    gap: 30px;
+}
+
+.meal-card {
+    background-color: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.meal-card:hover {
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+}
+
+.meal-header {
+    background-color: #3498db;
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+.meal-header h3 {
+    font-size: 24px;
+    font-weight: bold;
+}
+
+.meal-body {
+    padding: 20px;
+    text-align: center;
+}
+
+.btn-danger {
+    background-color: #e74c3c;
+    border: none;
+    padding: 12px 20px;
+    font-size: 16px;
+    border-radius: 5px;
+    color: white;
+    width: 100%;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-danger:hover {
+    background-color: #c0392b;
+    transform: scale(1.05);
+}
+
+.btn-danger:active {
+    transform: scale(1);
+}
+  
+
+/* Admin Dashboard Styles */
+.admin-dashboard {
+  padding: 40px 20px;
+}
+
+.card {
+  border-radius: 15px;
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.card-body {
+  padding: 25px;
+  text-align: center;
+}
+
+h3 {
+  font-size: 24px;
+  margin-bottom: 15px;
+  color: #2c3e50;
+}
+
+p {
+  font-size: 18px;
+  margin-bottom: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 12px 0;
+  font-size: 16px;
+  border-radius: 5px;
+  border: none;
+  background-color: #28a745;
+  color: #fff;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+button:hover {
+  background-color: #218838;
+  transform: scale(1.05);
+}
+
+button:active {
+  transform: scale(1);
+}
+
+button:disabled {
+  background-color: #6c757d;
+  cursor: not-allowed;
+}
+  /* Responsive Styles */
+  @media (max-width: 768px) {
+    .login-box {
+      padding: 20px;
+    }
+  
+    .meal-card, .meal-count {
+      padding: 15px;
+    }
+  
+    h1 {
+      font-size: 28px;
+    }
+  
+    h2 {
+      font-size: 22px;
+  }
+}
+==================== login.js ====================
+document.getElementById("studentLoginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("studentUsername").value;
+    const password = document.getElementById("studentPassword").value;
+  
+    const response = await fetch("/login/student", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+  
+    const result = await response.json();
+    if (result.success) {
+      window.location.href = result.redirect;
+    } else {
+      alert(result.message); // Show error message
+    }
+  });
+  
+  document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const username = document.getElementById("adminUsername").value;
+    const password = document.getElementById("adminPassword").value;
+  
+    const response = await fetch("/login/admin", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+  
+    const result = await response.json();
+    if (result.success) {
+      window.location.href = result.redirect;
+    } else {
+      alert(result.message); // Show error message
+    }
+  });
+==================== student-dashboard.js ====================
+document.getElementById("cancelBreakfast").addEventListener("click", async () => {
+    const response = await fetch("/cancel-meal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ meal: "breakfast" }),
+    });
+    const result = await response.json();
+    if (result.success) {
+      alert("Breakfast canceled successfully!");
+    } else {
+      alert("Failed to cancel breakfast.");
+    }
+  });
+
+// Add cutoff times for each meal
+const cutoffTimes = {
+    breakfast: "23:00", // 9 AM
+    lunch: "23:00",     // 12 PM
+    dinner: "23:00",    // 4 PM
+  };
+  
+  // Function to disable buttons after cutoff time
+  function disableButtonsAfterCutoff() {
+    const now = new Date();
+    const currentTime = now.toTimeString().slice(0, 5); // Get current time in HH:MM format
+  
+    // Disable breakfast button if current time is after cutoff
+    if (currentTime > cutoffTimes.breakfast) {
+      document.getElementById("cancelBreakfast").disabled = true;
+      document.getElementById("cancelBreakfast").textContent = "Timeout";
+    }
+  
+    // Disable lunch button if current time is after cutoff
+    if (currentTime > cutoffTimes.lunch) {
+      document.getElementById("cancelLunch").disabled = true;
+      document.getElementById("cancelLunch").textContent = "Timeout";
+    }
+  
+    // Disable dinner button if current time is after cutoff
+    if (currentTime > cutoffTimes.dinner) {
+      document.getElementById("cancelDinner").disabled = true;
+      document.getElementById("cancelDinner").textContent = "Timeout";
+    }
+  }
+  
+  // Call the function when the page loads
+  disableButtonsAfterCutoff();
+
+  function sendReminderEmail(email) {
+    emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
+      to_email: email,
+      message: "Don’t forget to cancel your meal before the cutoff time!",
+    })
+    .then(
+      (response) => {
+        console.log("Email sent successfully!", response);
+      },
+      (error) => {
+        console.error("Failed to send email:", error);
+      }
+    );
+  }
+  
+  // Example: Send a reminder email when the page loads
+  const studentEmail = "student@example.com"; // Replace with the student's email
+  sendReminderEmail(studentEmail);
+
+  document.getElementById("cancelBreakfast").addEventListener("click", async () => {
+    const response = await fetch("/cancel-meal", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ meal: "breakfast", username: "student1" }), // Replace with the logged-in student's username
+    });
+    const result = await response.json();
+    if (result.success) {
+      alert("Breakfast canceled successfully!");
+    } else {
+      alert("Failed to cancel breakfast.");
+    }
+  });
+==================== admin-dashboard.js ====================
+async function fetchMealCounts() {
+    const response = await fetch("/meal-counts");
+    const data = await response.json();
+    document.getElementById("breakfastCount").textContent = data.breakfast;
+    document.getElementById("lunchCount").textContent = data.lunch;
+    document.getElementById("dinnerCount").textContent = data.dinner;
+  }
+  fetchMealCounts();
+==================== admin-dashboard.html ====================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard - Mess Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css\styles.css" rel="stylesheet">
+</head>
+<body>
+  <div class="admin-dashboard">
+    <h1 class="text-center mb-4">Admin Dashboard</h1>
+    <div class="row">
+      <!-- Breakfast Count -->
+      <div class="col-md-4">
+        <div class="meal-count card shadow-sm">
+          <div class="card-body">
+            <h3>Breakfast</h3>
+            <p>Total Students: <span id="breakfastCount">100</span></p>
+            <p>Cancellations: <span id="breakfastCancellations">0</span></p>
+            <button class="btn btn-success btn-block">View Details</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lunch Count -->
+      <div class="col-md-4">
+        <div class="meal-count card shadow-sm">
+          <div class="card-body">
+            <h3>Lunch</h3>
+            <p>Total Students: <span id="lunchCount">120</span></p>
+            <p>Cancellations: <span id="lunchCancellations">0</span></p>
+            <button class="btn btn-success btn-block">View Details</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dinner Count -->
+      <div class="col-md-4">
+        <div class="meal-count card shadow-sm">
+          <div class="card-body">
+            <h3>Dinner</h3>
+            <p>Total Students: <span id="dinnerCount">80</span></p>
+            <p>Cancellations: <span id="dinnerCancellations">0</span></p>
+            <button class="btn btn-success btn-block">View Details</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/admin-dashboard.js"></script>
+</body>
+</html>
+
+==================== login.html ====================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Login - Mess Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <link href="css\styles.css" rel="stylesheet">
+  <style>
+    /* Inline styles for demo purposes; move to styles.css */
+    body, html {
+      font-family: 'Poppins', sans-serif;
+      height: 100%;
+      margin: 0;
+    }
+
+    .login-page {
+      background: linear-gradient(135deg, #6a11cb, #2575fc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
+
+    .login-box {
+      background: #fff;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.2);
+      max-width: 900px;
+      width: 100%;
+      transition: transform 0.4s ease;
+    }
+
+    .login-box:hover {
+      transform: scale(1.02);
+    }
+
+    h1 {
+      font-size: 36px;
+      font-weight: 600;
+      color: #2575fc;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+      margin-bottom: 40px;
+    }
+
+    h2 {
+      font-size: 28px;
+      font-weight: 600;
+      color: #333;
+      margin-bottom: 20px;
+    }
+
+    .form-control {
+      border-radius: 8px;
+      padding: 12px;
+      border: 1px solid #ccc;
+      transition: border 0.3s;
+    }
+
+    .form-control:focus {
+      border-color: #2575fc;
+      box-shadow: none;
+    }
+
+    .btn-primary {
+      background-color: #2575fc;
+      border: none;
+      padding: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #1a5bbf;
+    }
+
+    .login-box .row > div {
+      padding: 20px;
+      border-radius: 10px;
+      background-color: #f9f9f9;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+    }
+
+    .login-box .row > div:hover {
+      background-color: #fff;
+      box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .btn-primary {
+      width: 100%;
+      padding: 10px;
+      font-size: 18px;
+      font-weight: 500;
+    }
+  </style>
+</head>
+<body class="login-page">
+  <div class="login-box">
+    <h1 class="text-center">Mess Management System</h1>
+    <div class="row">
+      <!-- Student Login -->
+      <div class="col-md-6">
+        <h2>Student Login</h2>
+        <form id="studentLoginForm">
+          <div class="mb-3">
+            <label for="studentUsername" class="form-label">Username</label>
+            <input type="text" class="form-control" id="studentUsername" placeholder="Enter your username" required>
+          </div>
+          <div class="mb-3">
+            <label for="studentPassword" class="form-label">Password</label>
+            <input type="password" class="form-control" id="studentPassword" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+      </div>
+
+      <!-- Admin Login -->
+      <div class="col-md-6">
+        <h2>Admin Login</h2>
+        <form id="adminLoginForm">
+          <div class="mb-3">
+            <label for="adminUsername" class="form-label">Username</label>
+            <input type="text" class="form-control" id="adminUsername" placeholder="Enter your username" required>
+          </div>
+          <div class="mb-3">
+            <label for="adminPassword" class="form-label">Password</label>
+            <input type="password" class="form-control" id="adminPassword" placeholder="Enter your password" required>
+          </div>
+          <button type="submit" class="btn btn-primary">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script src="/js/login.js"></script>
+</body>
+</html>
+
+==================== logout.html ====================
+
+==================== student-dashboard.html ====================
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard - Mess Management System</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="css/styles.css" rel="stylesheet">
+  <!-- <link rel="stylesheet" href="N:\Internal Hackathon\mess-management-system\public\css\styles.css"> -->
+
+</head>
+<body>
+  <div class="dashboard-container">
+    <div class="dashboard-header text-center">
+      <h1>Student Dashboard</h1>
+      <p>Manage your meals with ease!</p>
+    </div>
+
+    <div class="row meal-cards">
+      <!-- Breakfast -->
+      <div class="col-md-4">
+        <div class="meal-card">
+          <div class="meal-header">
+            <h3>Breakfast</h3>
+          </div>
+          <div class="meal-body">
+            <button id="cancelBreakfast" class="btn btn-danger">Cancel Breakfast</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lunch -->
+      <div class="col-md-4">
+        <div class="meal-card">
+          <div class="meal-header">
+            <h3>Lunch</h3>
+          </div>
+          <div class="meal-body">
+            <button id="cancelLunch" class="btn btn-danger">Cancel Lunch</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Dinner -->
+      <div class="col-md-4">
+        <div class="meal-card">
+          <div class="meal-header">
+            <h3>Dinner</h3>
+          </div>
+          <div class="meal-body">
+            <button id="cancelDinner" class="btn btn-danger">Cancel Dinner</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/emailjs-com@3.2.0/dist/email.min.js"></script>
+<script>
+  (function () {
+    emailjs.init("YOUR_USER_ID"); // Replace with your EmailJS user ID
+  })();
+</script>
+
+  <script src="/js/student-dashboard.js"></script>
+</body>
+</html>

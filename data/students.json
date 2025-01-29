@@ -1,31 +1,36 @@
 {
-    "students": [
-      {
-        "username": "student1",
-        "password": "password123",
-        "canceled_meals": {
-          "breakfast": false,
-          "lunch": false,
-          "dinner": false
-        }
-      },
-      {
-        "username": "student2",
-        "password": "password123",
-        "canceled_meals": {
-          "breakfast": true,
-          "lunch": false,
-          "dinner": false
-        }
+  "students": [
+    {
+      "username": "student1",
+      "password": "student1password",
+      "canceled_meals": {
+        "breakfast": true,
+        "lunch": true,
+        "dinner": true
       }
-    ],
-    "admin": {
-      "username": "admin",
-      "password": "adminpass",
-      "meal_counts": {
-        "breakfast": 100,
-        "lunch": 120,
-        "dinner": 80
+    },
+    {
+      "username": "student2",
+      "password": "student2password",
+      "canceled_meals": {
+        "breakfast": false,
+        "lunch": false,
+        "dinner": false
       }
     }
+  ],
+  "admin": {
+    "username": "admin",
+    "password": "adminpassword",
+    "meal_counts": {
+      "breakfast": 98,
+      "lunch": 118,
+      "dinner": 79
+    },
+    "cancellations": {
+      "breakfast": 2,
+      "lunch": 2,
+      "dinner": 1
+    }
   }
+}

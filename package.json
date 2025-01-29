@@ -2,6 +2,8 @@
   "name": "mess-management-system",
   "version": "1.0.0",
   "dependencies": {
-    "express": "^4.21.2"
+    "bcrypt": "^5.1.1",
+    "express": "^4.21.2",
+    "node-cron": "^3.0.3"
   }
 }
