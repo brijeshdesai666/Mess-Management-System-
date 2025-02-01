@@ -1,15 +1,5 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const username = localStorage.getItem('currentUsername');
-  if (!username) {
-    window.location.href = "/"; // Redirect to login page if not logged in
-  }
-});
-
 async function fetchMealCounts() {
-  const username = localStorage.getItem('currentUsername'); // Retrieve username
-  const response = await fetch("/meal-counts", {
-    headers: { "x-username": username } // Include username in headers
-  });
+  const response = await fetch("/meal-counts");
   const data = await response.json();
   document.getElementById("breakfastTotal").textContent = data.totalBreakfast;
   document.getElementById("lunchTotal").textContent = data.totalLunch;
