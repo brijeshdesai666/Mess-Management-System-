@@ -7,8 +7,8 @@ async function fetchMealCounts() {
   document.getElementById("breakfastCancellations").textContent = data.breakfastCancellations;
   document.getElementById("lunchCancellations").textContent = data.lunchCancellations;
   document.getElementById("dinnerCancellations").textContent = data.dinnerCancellations;
-  document.getElementById("breakfastComing").textContent = data.breakfast;
-  document.getElementById("lunchComing").textContent = data.lunch;
-  document.getElementById("dinnerComing").textContent = data.dinner;
+  document.getElementById("breakfastComing").textContent = data.totalBreakfast - data.breakfastCancellations;
+  document.getElementById("lunchComing").textContent = data.totalLunch - data.lunchCancellations;
+  document.getElementById("dinnerComing").textContent = data.totalDinner - data.dinnerCancellations;
 }
 fetchMealCounts();
