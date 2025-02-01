@@ -4,7 +4,7 @@
       "username": "student1",
       "password": "student1password",
       "canceled_meals": {
-        "breakfast": true,
+        "breakfast": false,
         "lunch": true,
         "dinner": true
       }
@@ -13,9 +13,9 @@
       "username": "student2",
       "password": "student2password",
       "canceled_meals": {
-        "breakfast": true,
-        "lunch": true,
-        "dinner": true
+        "breakfast": false,
+        "lunch": false,
+        "dinner": false
       }
     }
   ],
@@ -23,14 +23,19 @@
     "username": "admin",
     "password": "adminpassword",
     "meal_counts": {
-      "breakfast": 96,
-      "lunch": 116,
-      "dinner": 77
+      "breakfast": 50,
+      "lunch": 119,
+      "dinner": 99
     },
     "cancellations": {
-      "breakfast": 4,
-      "lunch": 4,
-      "dinner": 3
+      "breakfast": 0,
+      "lunch": 1,
+      "dinner": 1
+    },
+    "total_students": {
+      "breakfast": 55,
+      "lunch": 120,
+      "dinner": 100
     }
   }
 }

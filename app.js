@@ -147,11 +147,14 @@ app.get("/meal-counts", (req, res) => {
     breakfastCancellations: data.admin.cancellations.breakfast,
     lunchCancellations: data.admin.cancellations.lunch,
     dinnerCancellations: data.admin.cancellations.dinner,
+    totalBreakfast: data.admin.total_students.breakfast,
+    totalLunch: data.admin.total_students.lunch,
+    totalDinner: data.admin.total_students.dinner,
   };
   res.json(counts);
 });
 
-// Schedule a task to reset cancellations at midnight
+// Schedule a task to reset cancellations and students coming at midnight
 cron.schedule("0 0 * * *", () => {
   data.students.forEach((student) => {
     student.canceled_meals.breakfast = false;
@@ -161,9 +164,29 @@ cron.schedule("0 0 * * *", () => {
   data.admin.cancellations.breakfast = 0;
   data.admin.cancellations.lunch = 0;
   data.admin.cancellations.dinner = 0;
+  data.admin.meal_counts.breakfast = data.admin.total_students.breakfast; // Use total students from JSON
+  data.admin.meal_counts.lunch = data.admin.total_students.lunch;         // Use total students from JSON
+  data.admin.meal_counts.dinner = data.admin.total_students.dinner;       // Use total students from JSON
   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
-  console.log("Cancellations reset at midnight");
+  console.log("Cancellations and students coming reset at midnight, total students unchanged");
 });
+
+// Comment out the testing cron job
+// cron.schedule("25 20 * * *", () => {
+//   data.students.forEach((student) => {
+//     student.canceled_meals.breakfast = false;
+//     student.canceled_meals.lunch = false;
+//     student.canceled_meals.dinner = false;
+//   });
+//   data.admin.cancellations.breakfast = 0;
+//   data.admin.cancellations.lunch = 0;
+//   data.admin.cancellations.dinner = 0;
+//   data.admin.meal_counts.breakfast = 0;
+//   data.admin.meal_counts.lunch = 0;
+//   data.admin.meal_counts.dinner = 0;
+//   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+//   console.log("Cancellations and admin dashboard values reset at 8:25 PM");
+// });
 
 // Error-handling middleware
 app.use((err, req, res, next) => {

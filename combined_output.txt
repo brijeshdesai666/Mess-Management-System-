@@ -84,7 +84,11 @@ app.post("/login/student", (req, res) => {
   const student = data.students.find((s) => s.username === username);
 
   if (student && password === student.password) {
-    res.json({ success: true, redirect: "/student-dashboard.html" });
+    res.json({ 
+      success: true, 
+      redirect: "/student-dashboard.html", 
+      username: username // Return the username
+    });
   } else {
     res.status(401).json({ success: false, message: "Invalid credentials" });
   }
@@ -94,7 +98,11 @@ app.post("/login/student", (req, res) => {
 app.post("/login/admin", (req, res) => {
   const { username, password } = req.body;
   if (username === data.admin.username && password === data.admin.password) {
-    res.json({ success: true, redirect: "/admin-dashboard.html" });
+    res.json({ 
+      success: true, 
+      redirect: "/admin-dashboard.html", 
+      username: username // Return the username
+    });
   } else {
     res.status(401).json({ success: false, message: "Invalid credentials" });
   }
@@ -167,6 +175,17 @@ app.use((err, req, res, next) => {
   res.status(500).json({ success: false, message: "Something went wrong!" });
 });
 
+// Get student's canceled meals
+app.get("/student-canceled-meals", (req, res) => {
+  const username = req.query.username;
+  const student = data.students.find(s => s.username === username);
+  if (student) {
+    res.json(student.canceled_meals);
+  } else {
+    res.status(404).json({ success: false, message: "Student not found" });
+  }
+});
+
 // Start the server
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
@@ -189,9 +208,9 @@ app.listen(PORT, () => {
       "username": "student2",
       "password": "student2password",
       "canceled_meals": {
-        "breakfast": false,
-        "lunch": false,
-        "dinner": false
+        "breakfast": true,
+        "lunch": true,
+        "dinner": true
       }
     }
   ],
@@ -199,14 +218,14 @@ app.listen(PORT, () => {
     "username": "admin",
     "password": "adminpassword",
     "meal_counts": {
-      "breakfast": 98,
-      "lunch": 118,
-      "dinner": 79
+      "breakfast": 96,
+      "lunch": 116,
+      "dinner": 77
     },
     "cancellations": {
-      "breakfast": 2,
-      "lunch": 2,
-      "dinner": 1
+      "breakfast": 4,
+      "lunch": 4,
+      "dinner": 3
     }
   }
 }
@@ -425,42 +444,44 @@ button:disabled {
 }
 ==================== login.js ====================
 document.getElementById("studentLoginForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const username = document.getElementById("studentUsername").value;
-    const password = document.getElementById("studentPassword").value;
-  
-    const response = await fetch("/login/student", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-  
-    const result = await response.json();
-    if (result.success) {
-      window.location.href = result.redirect;
-    } else {
-      alert(result.message); // Show error message
-    }
+  e.preventDefault();
+  const username = document.getElementById("studentUsername").value;
+  const password = document.getElementById("studentPassword").value;
+
+  const response = await fetch("/login/student", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
   });
-  
-  document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const username = document.getElementById("adminUsername").value;
-    const password = document.getElementById("adminPassword").value;
-  
-    const response = await fetch("/login/admin", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password }),
-    });
-  
-    const result = await response.json();
-    if (result.success) {
-      window.location.href = result.redirect;
-    } else {
-      alert(result.message); // Show error message
-    }
+
+  const result = await response.json();
+  if (result.success) {
+    localStorage.setItem('currentUsername', result.username); // Save username
+    window.location.href = result.redirect;
+  } else {
+    alert(result.message);
+  }
+});
+
+document.getElementById("adminLoginForm").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const username = document.getElementById("adminUsername").value;
+  const password = document.getElementById("adminPassword").value;
+
+  const response = await fetch("/login/admin", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ username, password }),
   });
+
+  const result = await response.json();
+  if (result.success) {
+    localStorage.setItem('currentUsername', result.username); // Save username
+    window.location.href = result.redirect;
+  } else {
+    alert(result.message);
+  }
+});
 ==================== student-dashboard.js ====================
 document.getElementById("cancelBreakfast").addEventListener("click", async () => {
   await cancelMeal("breakfast", "cancelBreakfast");
@@ -475,10 +496,16 @@ document.getElementById("cancelDinner").addEventListener("click", async () => {
 });
 
 async function cancelMeal(meal, buttonId) {
+  const username = localStorage.getItem('currentUsername'); // Retrieve username
+  if (!username) {
+    alert("Please log in to cancel meals.");
+    return;
+  }
+
   const response = await fetch("/cancel-meal", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ meal, username: "student1" }), // Replace with the logged-in student's username
+    body: JSON.stringify({ meal, username }), // Use dynamic username
   });
   const result = await response.json();
   if (result.success) {
@@ -522,8 +549,35 @@ function disableButtonsAfterCutoff() {
   }
 }
 
-// Call the function when the page loads
+// Load canceled meals on page initialization
+async function loadCanceledMeals() {
+  const username = localStorage.getItem('currentUsername');
+  if (!username) {
+    alert("Not logged in");
+    window.location.href = "/"; // Redirect to login
+    return;
+  }
+
+  const response = await fetch(`/student-canceled-meals?username=${username}`);
+  const canceledMeals = await response.json();
+
+  if (canceledMeals.breakfast) disableButton("breakfast");
+  if (canceledMeals.lunch) disableButton("lunch");
+  if (canceledMeals.dinner) disableButton("dinner");
+}
+
+function disableButton(meal) {
+  const buttonId = `cancel${meal.charAt(0).toUpperCase() + meal.slice(1)}`;
+  const button = document.getElementById(buttonId);
+  if (button) {
+    button.disabled = true;
+    button.textContent = "Meal Canceled";
+  }
+}
+
+// Call the functions when the page loads
 disableButtonsAfterCutoff();
+loadCanceledMeals();
 
 function sendReminderEmail(email) {
   emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {
