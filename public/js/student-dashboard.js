@@ -10,6 +10,11 @@ document.getElementById("cancelDinner").addEventListener("click", async () => {
   await cancelMeal("dinner", "cancelDinner");
 });
 
+document.getElementById("logoutButton").addEventListener("click", () => {
+  localStorage.removeItem('currentUsername'); // Remove username from localStorage
+  window.location.href = "/"; // Redirect to login page
+});
+
 async function cancelMeal(meal, buttonId) {
   const username = localStorage.getItem('currentUsername'); // Retrieve username
   if (!username) {

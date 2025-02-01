@@ -12,3 +12,8 @@ async function fetchMealCounts() {
   document.getElementById("dinnerComing").textContent = data.totalDinner - data.dinnerCancellations;
 }
 fetchMealCounts();
+
+document.getElementById("logoutButton").addEventListener("click", () => {
+  localStorage.removeItem('currentUsername'); // Remove username from localStorage
+  window.location.href = "/"; // Redirect to login page
+});

@@ -192,6 +192,19 @@ button:disabled {
   background-color: #6c757d;
   cursor: not-allowed;
 }
+
+/* Logout Button Styles */
+.logout-container {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.logout-container .btn-danger {
+  width: auto;
+  padding: 10px 20px;
+}
+
   /* Responsive Styles */
   @media (max-width: 768px) {
     .login-box {
