@@ -59,18 +59,28 @@ function isBeforeEndTime(meal) {
   return now <= endTime;
 }
 
+// Middleware to check if user is logged in
+function isAuthenticated(req, res, next) {
+  const username = req.headers['x-username'];
+  if (username) {
+    req.username = username;
+    next();
+  } else {
+    res.redirect('/');
+  }
+}
+
 // Serve login page
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "login.html"));
 });
 
-// Serve student dashboard
-app.get("/student-dashboard.html", (req, res) => {
+// Protect dashboard routes
+app.get("/student-dashboard.html", isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "student-dashboard.html"));
 });
 
-// Serve admin dashboard
-app.get("/admin-dashboard.html", (req, res) => {
+app.get("/admin-dashboard.html", isAuthenticated, (req, res) => {
   res.sendFile(path.join(__dirname, "views", "admin-dashboard.html"));
 });
 

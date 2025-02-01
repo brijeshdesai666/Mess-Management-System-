@@ -1,3 +1,10 @@
+document.addEventListener("DOMContentLoaded", () => {
+  const username = localStorage.getItem('currentUsername');
+  if (!username) {
+    window.location.href = "/"; // Redirect to login page if not logged in
+  }
+});
+
 document.getElementById("cancelBreakfast").addEventListener("click", async () => {
   await cancelMeal("breakfast", "cancelBreakfast");
 });
@@ -24,8 +31,11 @@ async function cancelMeal(meal, buttonId) {
 
   const response = await fetch("/cancel-meal", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ meal, username }), // Use dynamic username
+    headers: { 
+      "Content-Type": "application/json",
+      "x-username": username // Include username in headers
+    },
+    body: JSON.stringify({ meal }), // No need to include username in body
   });
   const result = await response.json();
   if (result.success) {
@@ -78,7 +88,9 @@ async function loadCanceledMeals() {
     return;
   }
 
-  const response = await fetch(`/student-canceled-meals?username=${username}`);
+  const response = await fetch(`/student-canceled-meals?username=${username}`, {
+    headers: { "x-username": username } // Include username in headers
+  });
   const canceledMeals = await response.json();
 
   if (canceledMeals.breakfast) disableButton("breakfast");
