@@ -74,6 +74,16 @@ app.get("/admin-dashboard.html", (req, res) => {
   res.sendFile(path.join(__dirname, "views", "admin-dashboard.html"));
 });
 
+// Serve student monthly summary page
+app.get("/student-monthly-summary.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "student-monthly-summary.html"));
+});
+
+// Serve admin monthly summary page
+app.get("/admin-monthly-summary.html", (req, res) => {
+  res.sendFile(path.join(__dirname, "views", "admin-monthly-summary.html"));
+});
+
 // Login route for students
 app.post("/login/student", (req, res) => {
   const { username, password } = req.body;
@@ -219,6 +229,87 @@ app.get("/student-canceled-meals", (req, res) => {
   } else {
     res.status(404).json({ success: false, message: "Student not found" });
   }
+});
+
+// Get student monthly summary route
+app.get("/student-monthly-summary", (req, res) => {
+  const username = req.query.username;
+  const student = data.students.find(s => s.username === username);
+  if (student) {
+    const summary = {
+      attendance: Object.keys(student.attendance).map(date => ({
+        date,
+        ...student.attendance[date]
+      })),
+      last_month_summary: student.last_month_summary
+    };
+    res.json(summary);
+  } else {
+    res.status(404).json({ success: false, message: "Student not found" });
+  }
+});
+
+// Get admin monthly summary route
+app.get("/admin-monthly-summary", (req, res) => {
+  const summary = {
+    attendance: data.students.flatMap(student => 
+      Object.keys(student.attendance).map(date => ({
+        username: student.username,
+        date,
+        ...student.attendance[date]
+      }))
+    ),
+    last_month_summary: data.students.map(student => student.last_month_summary)
+  };
+  res.json(summary);
+});
+
+// Get list of students
+app.get("/students", (req, res) => {
+  const students = data.students.map(student => ({
+    username: student.username,
+    last_month_summary: student.last_month_summary
+  }));
+  res.json(students);
+});
+
+// Schedule a task to reset cancellations and students coming at midnight
+cron.schedule("0 0 1 * *", () => {
+  data.students.forEach((student) => {
+    // Calculate last month's summary
+    const lastMonthSummary = {
+      total_breakfasts_attended: 0,
+      total_lunches_attended: 0,
+      total_dinners_attended: 0,
+      total_breakfasts_canceled: 0,
+      total_lunches_canceled: 0,
+      total_dinners_canceled: 0,
+      total_cost: 0
+    };
+
+    Object.keys(student.attendance).forEach(date => {
+      const day = student.attendance[date];
+      if (day.breakfast) lastMonthSummary.total_breakfasts_attended++;
+      if (day.lunch) lastMonthSummary.total_lunches_attended++;
+      if (day.dinner) lastMonthSummary.total_dinners_attended++;
+
+      if (!day.breakfast) lastMonthSummary.total_breakfasts_canceled++;
+      if (!day.lunch) lastMonthSummary.total_lunches_canceled++;
+      if (!day.dinner) lastMonthSummary.total_dinners_canceled++;
+
+      if (day.breakfast) lastMonthSummary.total_cost += 30;
+      if (day.lunch) lastMonthSummary.total_cost += 60;
+      if (day.dinner) lastMonthSummary.total_cost += 60;
+    });
+
+    student.last_month_summary = lastMonthSummary;
+
+    // Reset attendance for the new month
+    student.attendance = {};
+  });
+
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+  console.log("Cancellations and students coming reset at midnight, total students unchanged");
 });
 
 // Start the server

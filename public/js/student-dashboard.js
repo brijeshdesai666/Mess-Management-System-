@@ -81,9 +81,9 @@ async function loadCanceledMeals() {
   const response = await fetch(`/student-canceled-meals?username=${username}`);
   const canceledMeals = await response.json();
 
-  if (canceledMeals.breakfast.canceled) disableButton("breakfast");
-  if (canceledMeals.lunch.canceled) disableButton("lunch");
-  if (canceledMeals.dinner.canceled) disableButton("dinner");
+  if (canceledMeals.breakfast) disableButton("breakfast");
+  if (canceledMeals.lunch) disableButton("lunch");
+  if (canceledMeals.dinner) disableButton("dinner");
 }
 
 function disableButton(meal) {
@@ -98,18 +98,6 @@ function disableButton(meal) {
 // Call the functions when the page loads
 disableButtonsAfterCutoff();
 loadCanceledMeals();
-
-// Function to format date and time in Indian format
-function formatDateTime(dateTime) {
-  const date = new Date(dateTime);
-  const day = String(date.getDate()).padStart(2, '0');
-  const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
-  const year = date.getFullYear();
-  const hours = String(date.getHours()).padStart(2, '0');
-  const minutes = String(date.getMinutes()).padStart(2, '0');
-  const seconds = String(date.getSeconds()).padStart(2, '0');
-  return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
-}
 
 function sendReminderEmail(email) {
   emailjs.send("YOUR_SERVICE_ID", "YOUR_TEMPLATE_ID", {

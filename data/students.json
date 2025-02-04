@@ -12,14 +12,41 @@
           "canceled": true,
           "dateTime": "2025-02-04T15:46:37.999Z"
         },
-        "dinner": false
+        "dinner": {
+          "canceled": true,
+          "dateTime": "2025-02-04T16:35:04.787Z"
+        }
+      },
+      "attendance": {
+        "2025-02-01": {
+          "breakfast": true,
+          "lunch": true,
+          "dinner": true
+        },
+        "2025-02-02": {
+          "breakfast": false,
+          "lunch": true,
+          "dinner": true
+        }
+      },
+      "last_month_summary": {
+        "total_breakfasts_attended": 20,
+        "total_lunches_attended": 18,
+        "total_dinners_attended": 22,
+        "total_breakfasts_canceled": 8,
+        "total_lunches_canceled": 10,
+        "total_dinners_canceled": 6,
+        "total_cost": 1500
       }
     },
     {
       "username": "student2",
       "password": "student2password",
       "canceled_meals": {
-        "breakfast": false,
+        "breakfast": {
+          "canceled": true,
+          "dateTime": "2025-02-04T16:59:25.942Z"
+        },
         "lunch": {
           "canceled": true,
           "dateTime": "2025-02-04T15:49:41.491Z"
@@ -28,6 +55,27 @@
           "canceled": true,
           "dateTime": "2025-02-04T15:49:44.439Z"
         }
+      },
+      "attendance": {
+        "2025-02-01": {
+          "breakfast": true,
+          "lunch": false,
+          "dinner": true
+        },
+        "2025-02-02": {
+          "breakfast": true,
+          "lunch": true,
+          "dinner": false
+        }
+      },
+      "last_month_summary": {
+        "total_breakfasts_attended": 18,
+        "total_lunches_attended": 15,
+        "total_dinners_attended": 20,
+        "total_breakfasts_canceled": 10,
+        "total_lunches_canceled": 13,
+        "total_dinners_canceled": 8,
+        "total_cost": 1200
       }
     }
   ],
@@ -35,14 +83,14 @@
     "username": "admin",
     "password": "adminpassword",
     "meal_counts": {
-      "breakfast": 52,
+      "breakfast": 51,
       "lunch": 118,
-      "dinner": 99
+      "dinner": 98
     },
     "cancellations": {
-      "breakfast": 1,
+      "breakfast": 2,
       "lunch": 2,
-      "dinner": 1
+      "dinner": 2
     },
     "total_students": {
       "breakfast": 53,

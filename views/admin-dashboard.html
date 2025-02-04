@@ -12,12 +12,28 @@
       bottom: 10px;
       right: 10px;
     }
+    .header-buttons {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .logout-container {
+      margin-left: auto;
+    }
+    .meal-count {
+      margin-bottom: 20px;
+    }
+    .modal-body p {
+      margin-bottom: 10px;
+    }
   </style>
 </head>
 <body>
   <div class="admin-dashboard">
-    <div class="logout-container">
-      <button id="logoutButton" class="btn btn-danger btn-sm">Logout</button>
+    <div class="header-buttons">
+      <div class="logout-container">
+        <button id="logoutButton" class="btn btn-danger btn-sm">Logout</button>
+      </div>
     </div>
     <p id="currentDateTime" class="date-time"></p>
     <h1 class="text-center mb-4">Admin Dashboard</h1>
@@ -61,6 +77,16 @@
         </div>
       </div>
     </div>
+    <div class="mt-4">
+      <h3>Select Student to View Last Month's Summary</h3>
+      <select id="studentSelect" class="form-select">
+        <!-- Options will be populated here -->
+      </select>
+      <button id="viewSummaryButton" class="btn btn-primary mt-2">View Summary</button>
+    </div>
+    <div class="mt-4">
+      <h3>Total Paid Rupees by All Students: <span id="totalPaidRupees"></span></h3>
+    </div>
   </div>
 
   <!-- Modal -->
@@ -84,6 +110,21 @@
               <!-- Details will be populated here -->
             </tbody>
           </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Summary Modal -->
+  <div class="modal fade" id="summaryModal" tabindex="-1" aria-labelledby="summaryModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="summaryModalLabel">Last Month's Summary</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <!-- Summary details will be populated here -->
         </div>
       </div>
     </div>
@@ -126,6 +167,59 @@
       detailsModal.addEventListener("hidden.bs.modal", () => {
         document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
       });
+
+      // Populate student dropdown
+      async function populateStudentDropdown() {
+        const response = await fetch("/students");
+        const students = await response.json();
+        const studentSelect = document.getElementById("studentSelect");
+        studentSelect.innerHTML = ""; // Clear existing options
+        const uniqueStudents = new Set();
+        students.forEach(student => {
+          if (!uniqueStudents.has(student.username)) {
+            uniqueStudents.add(student.username);
+            const option = document.createElement("option");
+            option.value = student.username;
+            option.textContent = student.username;
+            studentSelect.appendChild(option);
+          }
+        });
+      }
+      populateStudentDropdown();
+
+      // View summary button click event
+      document.getElementById("viewSummaryButton").addEventListener("click", async () => {
+        const username = document.getElementById("studentSelect").value;
+        const response = await fetch(`/student-monthly-summary?username=${username}`);
+        const summary = await response.json();
+        const summaryDetails = `
+          <div>
+            <p><strong>Total Cost:</strong> ₹${summary.last_month_summary.total_cost}</p>
+            <p><strong>Total Breakfasts Attended:</strong> ${summary.last_month_summary.total_breakfasts_attended}</p>
+            <p><strong>Total Lunches Attended:</strong> ${summary.last_month_summary.total_lunches_attended}</p>
+            <p><strong>Total Dinners Attended:</strong> ${summary.last_month_summary.total_dinners_attended}</p>
+            <p><strong>Total Breakfasts Canceled:</strong> ${summary.last_month_summary.total_breakfasts_canceled}</p>
+            <p><strong>Total Lunches Canceled:</strong> ${summary.last_month_summary.total_lunches_canceled}</p>
+            <p><strong>Total Dinners Canceled:</strong> ${summary.last_month_summary.total_dinners_canceled}</p>
+          </div>
+        `;
+        const modalBody = document.querySelector("#summaryModal .modal-body");
+        modalBody.innerHTML = summaryDetails;
+        const modal = new bootstrap.Modal(document.getElementById("summaryModal"));
+        modal.show();
+      });
+
+      // Calculate total paid rupees by all students
+      async function calculateTotalPaidRupees() {
+        const response = await fetch("/students");
+        const students = await response.json();
+        let totalPaidRupees = 0;
+        students.forEach(student => {
+          totalPaidRupees += student.last_month_summary.total_cost;
+        });
+        document.getElementById("totalPaidRupees").textContent = `₹${totalPaidRupees}`;
+      }
+      calculateTotalPaidRupees();
     });
   </script>
 </body>
