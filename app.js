@@ -121,8 +121,11 @@ app.post("/cancel-meal", (req, res) => {
   // Find the student in the JSON data
   const student = data.students.find((s) => s.username === username);
   if (student) {
-    if (!student.canceled_meals[meal]) {
-      student.canceled_meals[meal] = true; // Mark the meal as canceled
+    if (!student.canceled_meals[meal].canceled) {
+      student.canceled_meals[meal] = {
+        canceled: true,
+        dateTime: new Date().toISOString() // Store the actual cancellation date and time
+      };
       data.admin.meal_counts[meal] -= 1;   // Update the meal count
       data.admin.cancellations[meal] += 1; // Update the cancellation count
 
@@ -154,8 +157,21 @@ app.get("/meal-counts", (req, res) => {
   res.json(counts);
 });
 
+// Get meal cancellations route
+app.get("/meal-cancellations", (req, res) => {
+  const meal = req.query.meal;
+  const cancellations = data.students
+    .filter(student => student.canceled_meals[meal].canceled)
+    .map(student => ({
+      username: student.username,
+      meal: meal,
+      dateTime: student.canceled_meals[meal].dateTime
+    }));
+  res.json(cancellations);
+});
+
 // Schedule a task to reset cancellations and students coming at midnight
-cron.schedule("0 0 * * *", () => {
+cron.schedule("16 21 * * *", () => {
   data.students.forEach((student) => {
     student.canceled_meals.breakfast = false;
     student.canceled_meals.lunch = false;
@@ -172,7 +188,7 @@ cron.schedule("0 0 * * *", () => {
 });
 
 // Comment out the testing cron job
-// cron.schedule("25 20 * * *", () => {
+// cron.schedule("0 0 * * *", () => {
 //   data.students.forEach((student) => {
 //     student.canceled_meals.breakfast = false;
 //     student.canceled_meals.lunch = false;

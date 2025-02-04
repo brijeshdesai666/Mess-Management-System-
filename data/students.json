@@ -4,9 +4,15 @@
       "username": "student1",
       "password": "student1password",
       "canceled_meals": {
-        "breakfast": true,
-        "lunch": true,
-        "dinner": true
+        "breakfast": {
+          "canceled": true,
+          "dateTime": "2025-02-04T15:46:26.269Z"
+        },
+        "lunch": {
+          "canceled": true,
+          "dateTime": "2025-02-04T15:46:37.999Z"
+        },
+        "dinner": false
       }
     },
     {
@@ -14,8 +20,14 @@
       "password": "student2password",
       "canceled_meals": {
         "breakfast": false,
-        "lunch": false,
-        "dinner": false
+        "lunch": {
+          "canceled": true,
+          "dateTime": "2025-02-04T15:49:41.491Z"
+        },
+        "dinner": {
+          "canceled": true,
+          "dateTime": "2025-02-04T15:49:44.439Z"
+        }
       }
     }
   ],
@@ -23,13 +35,13 @@
     "username": "admin",
     "password": "adminpassword",
     "meal_counts": {
-      "breakfast": 49,
-      "lunch": 119,
+      "breakfast": 52,
+      "lunch": 118,
       "dinner": 99
     },
     "cancellations": {
       "breakfast": 1,
-      "lunch": 1,
+      "lunch": 2,
       "dinner": 1
     },
     "total_students": {

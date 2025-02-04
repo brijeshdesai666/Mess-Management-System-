@@ -198,28 +198,51 @@ button:disabled {
   position: absolute;
   top: 20px;
   right: 20px;
+  text-align: right;
 }
 
 .logout-container .btn-danger {
   width: auto;
-  padding: 10px 20px;
+  padding: 5px 10px;
+  font-size: 12px;
 }
 
-  /* Responsive Styles */
-  @media (max-width: 768px) {
-    .login-box {
-      padding: 20px;
-    }
-  
-    .meal-card, .meal-count {
-      padding: 15px;
-    }
-  
-    h1 {
-      font-size: 28px;
-    }
-  
-    h2 {
-      font-size: 22px;
+#currentDateTime {
+  font-size: 14px;
+  color: #333;
+  position: fixed;
+  bottom: 10px;
+  right: 10px;
+}
+
+/* Responsive Styles */
+@media (max-width: 768px) {
+  .login-box {
+    padding: 20px;
+  }
+
+  .meal-card, .meal-count {
+    padding: 15px;
+  }
+
+  h1 {
+    font-size: 28px;
+  }
+
+  h2 {
+    font-size: 22px;
+  }
+
+  .logout-container {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+  }
+
+  #currentDateTime {
+    font-size: 12px;
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
   }
 }
