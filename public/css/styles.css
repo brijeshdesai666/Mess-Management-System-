@@ -3,62 +3,63 @@ body {
     font-family: 'Arial', sans-serif;
     background-color: #f8f9fa;
     color: #333;
-  }
-  
-  .container {
+}
+
+.container {
     max-width: 1200px;
     margin: 0 auto;
     padding: 20px;
-  }
-  
-  h1, h2 {
-    color: #2c3e50;
+}
+
+h1, h2 {
+    color: #e67e22;
     font-weight: bold;
-  }
-  
-  /* Login Page Styles */
-  .login-page {
-    background: linear-gradient(135deg, #6a11cb, #2575fc);
+}
+
+/* Login Page Styles */
+.login-page {
+    background: linear-gradient(135deg, #e67e22, #fae5d3);
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-  
-  .login-box {
+}
+
+.login-box {
     background: #fff;
     padding: 30px;
-    border-radius: 10px;
+    border-radius: 9px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  }
-  
-  .login-box h2 {
+}
+
+.login-box h2 {
     margin-bottom: 20px;
     font-size: 24px;
     text-align: center;
-  }
-  
-  .form-control {
-    border-radius: 5px;
+    color: #333;
+}
+
+.form-control {
+    border-radius: 9px;
     border: 1px solid #ddd;
     padding: 10px;
-  }
-  
-  .btn-primary {
-    background-color: #2575fc;
+}
+
+.btn-primary {
+    background-color: #e67e22;
     border: none;
     padding: 10px 20px;
-    border-radius: 5px;
+    border-radius: 9px;
     font-size: 16px;
     transition: background-color 0.3s ease;
-  }
-  
-  .btn-primary:hover {
-    background-color: #1a5bbf;
-  }
-  
-  /* Dashboard Styles */
-  .dashboard-container {
+}
+
+.btn-primary:hover {
+    background-color: #c0392b;
+}
+
+/* Dashboard Styles */
+.dashboard-container {
     padding: 40px;
     max-width: 1200px;
     margin: 0 auto;
@@ -71,7 +72,7 @@ body {
 .dashboard-header h1 {
     font-size: 36px;
     font-weight: bold;
-    color: #2c3e50;
+    color: #e67e22;
 }
 
 .dashboard-header p {
@@ -87,7 +88,7 @@ body {
 
 .meal-card {
     background-color: #ffffff;
-    border-radius: 10px;
+    border-radius: 9px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -99,7 +100,7 @@ body {
 }
 
 .meal-header {
-    background-color: #3498db;
+    background-color: #e67e22;
     color: #fff;
     padding: 20px;
     text-align: center;
@@ -116,11 +117,11 @@ body {
 }
 
 .btn-danger {
-    background-color: #e74c3c;
+    background-color: #e67e22;
     border: none;
     padding: 12px 20px;
     font-size: 16px;
-    border-radius: 5px;
+    border-radius: 9px;
     color: white;
     width: 100%;
     transition: background-color 0.3s ease, transform 0.2s ease;
@@ -134,115 +135,115 @@ body {
 .btn-danger:active {
     transform: scale(1);
 }
-  
 
 /* Admin Dashboard Styles */
 .admin-dashboard {
-  padding: 40px 20px;
+    padding: 40px 20px;
 }
 
 .card {
-  border-radius: 15px;
-  border: none;
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border-radius: 9px;
+    border: none;
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
 .card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transform: translateY(-10px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
 }
 
 .card-body {
-  padding: 25px;
-  text-align: center;
+    padding: 25px;
+    text-align: center;
+    background-color: #fae5d3;
 }
 
 h3 {
-  font-size: 24px;
-  margin-bottom: 15px;
-  color: #2c3e50;
+    font-size: 24px;
+    margin-bottom: 15px;
+    color: #e67e22;
 }
 
 p {
-  font-size: 18px;
-  margin-bottom: 10px;
+    font-size: 18px;
+    margin-bottom: 10px;
 }
 
 button {
-  width: 100%;
-  padding: 12px 0;
-  font-size: 16px;
-  border-radius: 5px;
-  border: none;
-  background-color: #28a745;
-  color: #fff;
-  transition: background-color 0.3s ease, transform 0.2s ease;
+    width: 100%;
+    padding: 12px 0;
+    font-size: 16px;
+    border-radius: 9px;
+    border: none;
+    background-color: #e67e22;
+    color: #fff;
+    transition: background-color 0.3s ease, transform 0.2s ease;
 }
 
 button:hover {
-  background-color: #218838;
-  transform: scale(1.05);
+    background-color: #c0392b;
+    transform: scale(1.05);
 }
 
 button:active {
-  transform: scale(1);
+    transform: scale(1);
 }
 
 button:disabled {
-  background-color: #6c757d;
-  cursor: not-allowed;
+    background-color: #6c757d;
+    cursor: not-allowed;
 }
 
 /* Logout Button Styles */
 .logout-container {
-  position: absolute;
-  top: 20px;
-  right: 20px;
-  text-align: right;
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    text-align: right;
 }
 
 .logout-container .btn-danger {
-  width: auto;
-  padding: 5px 10px;
-  font-size: 12px;
+    width: auto;
+    padding: 5px 10px;
+    font-size: 12px;
 }
 
 #currentDateTime {
-  font-size: 14px;
-  color: #333;
-  position: fixed;
-  bottom: 10px;
-  right: 10px;
+    font-size: 14px;
+    color: #333;
+    position: fixed;
+    bottom: 10px;
+    right: 10px;
 }
 
 /* Responsive Styles */
 @media (max-width: 768px) {
-  .login-box {
-    padding: 20px;
-  }
+    .login-box {
+        padding: 20px;
+    }
 
-  .meal-card, .meal-count {
-    padding: 15px;
-  }
+    .meal-card, .meal-count {
+        padding: 15px;
+    }
 
-  h1 {
-    font-size: 28px;
-  }
+    h1 {
+        font-size: 28px;
+    }
 
-  h2 {
-    font-size: 22px;
-  }
+    h2 {
+        font-size: 22px;
+    }
 
-  .logout-container {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-  }
+    .logout-container {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+    }
 
-  #currentDateTime {
-    font-size: 12px;
-    position: fixed;
-    bottom: 10px;
-    right: 10px;
-  }
+    #currentDateTime {
+        font-size: 12px;
+        position: fixed;
+        bottom: 10px;
+        right: 10px;
+    }
 }

@@ -36,9 +36,9 @@ const mealTimes = {
 
 // Define meal cancellation end times for testing
 const mealEndTimes = {
-  breakfast: "23:59",
-  lunch: "23:59",
-  dinner: "23:59",
+  breakfast: "06:00",
+  lunch: "09:00",
+  dinner: "16:00",
 };
 
 // Helper function to check if current time is within the allowed cancellation time
@@ -58,6 +58,42 @@ function isBeforeEndTime(meal) {
   const endTime = new Date(now.setHours(endHour, endMinute, 0, 0));
   return now <= endTime;
 }
+
+// Function to generate attendance data for the current month up to today
+function generateAttendanceData() {
+  const today = new Date();
+  const currentMonth = today.getMonth();
+  const currentYear = today.getFullYear();
+
+  // Start date is 01-{current month}-2025
+  const startDate = new Date(2025, currentMonth, 1);
+  // End date is the current date in 2025 (or today if it's before 2025)
+  const endDate = new Date(Math.min(today.getFullYear(), 2025), currentMonth, today.getDate());
+
+  // Get the last valid day of the current month in 2025
+  const lastDayOfMonth = new Date(2025, currentMonth + 1, 0).getDate();
+
+  data.students.forEach(student => {
+    for (let day = 1; day <= Math.min(endDate.getDate(), lastDayOfMonth); day++) {
+      const date = new Date(2025, currentMonth, day);
+      const dateString = date.toISOString().split('T')[0];
+
+      // Exclude the date 31-01-2025
+      if (dateString !== "2025-01-31" && !student.attendance[dateString]) {
+        student.attendance[dateString] = {
+          breakfast: true,
+          lunch: true,
+          dinner: true
+        };
+      }
+    }
+  });
+
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+}
+
+// Generate attendance data when the server starts
+generateAttendanceData();
 
 // Serve login page
 app.get("/", (req, res) => {
@@ -213,6 +249,32 @@ cron.schedule("16 21 * * *", () => {
 //   fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
 //   console.log("Cancellations and admin dashboard values reset at 8:25 PM");
 // });
+
+// Add menu route
+app.post("/add-menu", (req, res) => {
+  const { breakfastMenu, lunchMenu, dinnerMenu } = req.body;
+
+  data.admin.menu = {
+    breakfastMenu,
+    lunchMenu,
+    dinnerMenu
+  };
+
+  // Save the updated data back to the JSON file
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+
+  res.json({ success: true });
+});
+
+// Get menu route
+app.get("/get-menu", (req, res) => {
+  const menu = data.admin.menu || {
+    breakfastMenu: "No menu available",
+    lunchMenu: "No menu available",
+    dinnerMenu: "No menu available"
+  };
+  res.json(menu);
+});
 
 // Error-handling middleware
 app.use((err, req, res, next) => {

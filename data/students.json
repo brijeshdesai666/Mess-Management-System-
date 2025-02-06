@@ -27,6 +27,26 @@
           "breakfast": false,
           "lunch": true,
           "dinner": true
+        },
+        "2025-02-03": {
+          "breakfast": true,
+          "lunch": false,
+          "dinner": true
+        },
+        "2025-02-04": {
+          "breakfast": true,
+          "lunch": true,
+          "dinner": false
+        },
+        "2025-02-05": {
+          "breakfast": false,
+          "lunch": true,
+          "dinner": true
+        },
+        "2025-02-06": {
+          "breakfast": true,
+          "lunch": true,
+          "dinner": true
         }
       },
       "last_month_summary": {
@@ -66,6 +86,26 @@
           "breakfast": true,
           "lunch": true,
           "dinner": false
+        },
+        "2025-02-03": {
+          "breakfast": false,
+          "lunch": true,
+          "dinner": true
+        },
+        "2025-02-04": {
+          "breakfast": true,
+          "lunch": false,
+          "dinner": true
+        },
+        "2025-02-05": {
+          "breakfast": true,
+          "lunch": true,
+          "dinner": false
+        },
+        "2025-02-06": {
+          "breakfast": true,
+          "lunch": true,
+          "dinner": true
         }
       },
       "last_month_summary": {
@@ -96,6 +136,11 @@
       "breakfast": 53,
       "lunch": 120,
       "dinner": 100
+    },
+    "menu": {
+      "breakfastMenu": "cha - bhakhri",
+      "lunchMenu": "sev tameta nu shak, bateka nu shak, dal bhat, rotli,chhas etc...",
+      "dinnerMenu": "aalu parotha"
     }
   }
 }
